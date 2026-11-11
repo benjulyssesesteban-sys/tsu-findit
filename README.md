@@ -87,7 +87,7 @@ These open rules are only for a class demo. For a real deployment, use Firebase 
 
 ## Run locally
 
-Use `npx serve .` or the VS Code Live Server extension. Do not open the HTML files by double-clicking them, because `file://` blocks some browser features.
+Use the VS Code Live Server extension or any simple static file server. Do not open the HTML files by double-clicking them, because `file://` blocks some browser features.
 
 Opening any page with `?reset=1` only clears your own login on that browser. It never deletes the shared database.
 

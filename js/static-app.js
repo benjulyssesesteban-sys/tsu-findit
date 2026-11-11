@@ -1,5 +1,5 @@
-/* TSU FindIt static build: runs the original EJS views in the browser and
-   keeps data in localStorage instead of Express + SQLite (GitHub Pages friendly). */
+/* TSU FindIt: builds the pages from EJS templates in the browser, so the site
+   can be hosted on GitHub Pages. Data is kept in Firebase Firestore (js/cloud.js). */
 (window.Cloud ? window.Cloud.load().catch(function (e) { console.error('Cloud load failed', e); window.__cloudFail = true; return null; }) : Promise.resolve(null)).then(function (remote) {
   if (window.__cloudFail) { document.body.innerHTML = '<div style="font-family:sans-serif;max-width:520px;margin:4rem auto;padding:0 1rem"><h1>Cannot reach the shared database</h1><p>Check <code>js/firebase-config.js</code> and that the Firestore rules are published, then reload. Details are in the browser console (F12).</p></div>'; return; }
   var K = 'fi_db_v3', SK = 'fi_user_v1', DOM = 'tsu.edu.ph';

@@ -1,5 +1,5 @@
-/* TSU FindIt static build: runs the original EJS views in the browser and
-   keeps data in localStorage instead of Express + SQLite (GitHub Pages friendly). */
+/* TSU FindIt: builds the pages from EJS templates in the browser, so the site
+   can be hosted on GitHub Pages. Data is kept in Firebase Firestore (js/cloud.js). */
 (window.Cloud ? window.Cloud.load().catch(function (e) { console.error('Cloud load failed', e); window.__cloudFail = true; return null; }) : Promise.resolve(null)).then(function (remote) {
   if (window.__cloudFail) { document.body.innerHTML = '<div style="font-family:sans-serif;max-width:520px;margin:4rem auto;padding:0 1rem"><h1>Cannot reach the shared database</h1><p>Check <code>js/firebase-config.js</code> and that the Firestore rules are published, then reload. Details are in the browser console (F12).</p></div>'; return; }
   var K = 'fi_db_v3', SK = 'fi_user_v1', DOM = 'tsu.edu.ph';
@@ -39,8 +39,10 @@
     return u.slice(1).replace(/^([^?]+)/, '$1.html');
   }
   function go(page, type, text) { var u = page + (type ? (page.indexOf('?') > -1 ? '&' : '?') + type + '=' + encodeURIComponent(text) : ''); (window.Cloud ? window.Cloud.flush() : Promise.resolve()).then(function () { location.href = u; }); }
+  var DESC = {index: "TSU FindIt is a moderated lost and found board for Tarlac State University. Search lost items, report found ones, and message the poster.", browse: "Browse approved lost and found items at Tarlac State University. Search by keyword and filter by lost, found, or claimed items.", item: "View the details of a lost or found item on TSU FindIt, including where and when it was reported, and message the person who posted it.", login: "Log in to TSU FindIt with your TSU email to report items, check your posts, and send messages.", register: "Create a TSU FindIt account with your student, faculty, or staff TSU email to report and search lost and found items.", profile: "Update your TSU FindIt display name, TSU email, and password.", report: "Report a lost or found item on TSU FindIt with its details, location, date, and an optional photo. Every post is reviewed before it goes live.", "my-posts": "See your lost and found reports on TSU FindIt and check whether each one is pending, active, claimed, or not approved.", messages: "Read your TSU FindIt conversations with other users about lost and found items.", conversation: "Private conversation on TSU FindIt between two users about a lost or found item.", admin: "Admin review queue for TSU FindIt: approve or reject pending lost and found reports.", "404": "This page was not found on TSU FindIt. Go back to the home page or browse the lost and found items."};
+  function clip(x) { x = String(x); return x.length > 158 ? x.slice(0, 155).replace(/\s+\S*$/, '') + '...' : x; }
   function show(view, l) {
-    var loc = Object.assign({ user: U, currentPath: PATHS[window.PAGE] || '', config: { TSU_EMAIL_DOMAIN: DOM }, success: null, error: null }, l);
+    var loc = Object.assign({ user: U, currentPath: PATHS[window.PAGE] || '', config: { TSU_EMAIL_DOMAIN: DOM }, success: null, error: null, description: DESC[window.PAGE] }, l);
     var html = ejs.render(T[view], loc, { includer: function (o) { return { template: T[o] || T['partials/' + o] }; } })
       .replace(/(href|src)="(\/[^"]*)"/g, function (a, at, u) { return at + '="' + href(u) + '"'; });
     var ld = document.getElementById('ld'); if (ld && ld.parentNode) ld.parentNode.removeChild(ld);
@@ -48,7 +50,7 @@
     document.addEventListener('submit', onSubmit);
     try { var cu = new URL(location.href); if (cu.searchParams.has('success') || cu.searchParams.has('error')) { cu.searchParams.delete('success'); cu.searchParams.delete('error'); history.replaceState(null, '', cu.pathname + cu.search + cu.hash); } } catch (e) {}
   }
-  function err404(t, m) { show('error', { title: t, message: m }); }
+  function err404(t, m) { show('error', { title: t, message: m, description: DESC['404'] }); }
   function needLogin() { if (!U) { go('login.html', 'error', 'Please log in to continue.'); return true; } }
   function visible(p) { return p && (p.status === 'ACTIVE' || p.status === 'CLAIMED' || (U && (U.id === p.user_id || U.role === 'admin'))); }
 
@@ -64,7 +66,7 @@
       })).map(join);
       return show('browse', Object.assign({ title: 'Browse items', posts: posts, filters: { q: Q.q || '', type: Q.type || '', showClaimed: claimed } }, msg()));
     }
-    if (pg === 'item') { p = by(ps, Q.id); if (!visible(p)) return err404('Post not found', 'That item is not available on the public board.'); return show('item-detail', Object.assign({ title: p.item_name, post: join(p), statusLabel: label[p.status] || p.status }, msg())); }
+    if (pg === 'item') { p = by(ps, Q.id); if (!visible(p)) return err404('Post not found', 'That item is not available on the public board.'); return show('item-detail', Object.assign({ title: p.item_name, description: clip((p.type === 'found' ? 'Found' : 'Lost') + ' item: ' + p.item_name + ' at ' + p.location_text + ' on ' + p.event_date + '. Message the poster on TSU FindIt.'), post: join(p), statusLabel: label[p.status] || p.status }, msg())); }
     if (pg === 'login') return show('login', { title: 'Log in', error: Q.error || null, values: { email: '' } });
     if (pg === 'register') return show('register', { title: 'Create an account', error: null, values: { full_name: '', email: '', role: 'student' } });
     if (pg === 'report') { if (needLogin()) return; return show('report-form', { title: 'Report an item', error: null, values: { type: 'lost', item_name: '', description: '', location_text: '', event_date: '', event_time: '' } }); }
@@ -89,7 +91,7 @@
       if (!p) return err404('Post not found', 'That post does not exist or is no longer available.');
       if (!o || p.status === 'PENDING' || p.status === 'REJECTED' || U.id === o.id || !(p.user_id === U.id || o.id === p.user_id)) return err404('Conversation not found', 'That private conversation is not available.');
       var ms = db.messages.filter(function (m) { return m.post_id === p.id && ((m.sender_id === U.id && m.recipient_id === o.id) || (m.sender_id === o.id && m.recipient_id === U.id)); }).map(function (m) { return Object.assign({ sender_name: by(db.users, m.sender_id).full_name }, m); });
-      return show('conversation', Object.assign({ title: 'Conversation about ' + p.item_name, post: p, otherUser: o, messages: ms }, msg()));
+      return show('conversation', Object.assign({ title: 'Conversation about ' + p.item_name, description: clip('Private conversation on TSU FindIt about the ' + (p.type === 'found' ? 'found' : 'lost') + ' item: ' + p.item_name + '.'), post: p, otherUser: o, messages: ms }, msg()));
     }
     if (pg === 'profile') { if (needLogin()) return; var me = by(db.users, U.id); return show('profile', Object.assign({ title: 'Your profile', user: { id: me.id, full_name: me.full_name, email: me.email, role: me.role } }, { error: null, success: Q.success || null })); }
     err404('Page not found', 'We could not find the page you requested.');

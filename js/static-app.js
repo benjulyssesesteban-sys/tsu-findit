@@ -53,14 +53,17 @@
   }
   function err404(t, m) { show('error', { title: t, message: m, description: DESC['404'] }); }
   function needLogin() { if (!U) { go('login.html', 'error', 'Please log in to continue.'); return true; } }
-  function visible(p) { return p && (p.status === 'ACTIVE' || p.status === 'CLAIMED' || (U && (U.id === p.user_id || U.role === 'admin'))); }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function future(p) { return !!(p && p.event_date && String(p.event_date) > today()); }
+  function visible(p) { return p && (((p.status === 'ACTIVE' || p.status === 'CLAIMED') && !future(p)) || (U && (U.id === p.user_id || U.role === 'admin'))); }
 
   function route() {
     var pg = window.PAGE, ps = db.posts, posts, p;
-    if (pg === 'index') { posts = newest(ps.filter(function (x) { return x.status === 'ACTIVE' || x.status === 'CLAIMED'; })).slice(0, 6).map(join); return show('landing', Object.assign({ title: 'Find what matters', posts: posts }, msg())); }
+    if (pg === 'index') { posts = newest(ps.filter(function (x) { return (x.status === 'ACTIVE' || x.status === 'CLAIMED') && !future(x); })).slice(0, 6).map(join); return show('landing', Object.assign({ title: 'Find what matters', posts: posts }, msg())); }
     if (pg === 'browse') {
       var claimed = Q.status === 'claimed' || Q.status === 'all', q = (Q.q || '').trim().toLowerCase();
       posts = newest(ps.filter(function (x) {
+        if (future(x)) return false;
         if (!(claimed ? x.status === 'ACTIVE' || x.status === 'CLAIMED' : x.status === 'ACTIVE')) return false;
         if ((Q.type === 'lost' || Q.type === 'found') && x.type !== Q.type) return false;
         return !q || [x.item_name, x.description, x.location_text].join('\n').toLowerCase().indexOf(q) > -1;
@@ -74,7 +77,7 @@
     if (pg === 'my-posts') { if (needLogin()) return; return show('my-posts', Object.assign({ title: 'My posts', posts: newest(ps.filter(function (x) { return x.user_id === U.id; })) }, msg())); }
     if (pg === 'admin') {
       if (needLogin()) return; if (U.role !== 'admin') return go('browse.html', 'error', 'Admin access is limited to the seeded admin account.');
-      return show('admin-queue', { title: 'Admin review queue', pending: ps.filter(function (x) { return x.status === 'PENDING'; }).sort(function (a, b) { return a.id - b.id; }).map(join),
+      return show('admin-queue', { title: 'Admin review queue', pending: ps.filter(function (x) { return x.status === 'PENDING'; }).sort(function (a, b) { return a.id - b.id; }).map(join).map(function (x) { x.future = future(x); return x; }),
         reviewed: newest(ps.filter(function (x) { return (x.status === 'ACTIVE' || x.status === 'REJECTED') && x.reviewed_at; }), 'reviewed_at').slice(0, 6).map(join), error: Q.error || null, success: Q.success || null, openRejectId: Q.reject_id || null, rejectReason: Q.reason || '' });
     }
     if (pg === 'messages') {
@@ -150,6 +153,7 @@
       if (a === 'approve' || a === 'reject') {
         if (U.role !== 'admin') return go('browse.html', 'error', 'Admin access is limited to the seeded admin account.');
         if (p.status !== 'PENDING') return go('admin.html', 'error', 'That post has already been reviewed.');
+        if (a === 'approve' && future(p)) return go('admin.html', 'error', 'This post has a future date (' + p.event_date + ') and cannot be approved. Reject it instead.');
         var rs = g('reason'); if (a === 'reject' && !rs) return go('admin.html?reject_id=' + p.id, 'error', 'Add a reason before rejecting this post.');
         p.status = a === 'approve' ? 'ACTIVE' : 'REJECTED'; if (a === 'reject') p.rejection_reason = rs; p.reviewed_by = U.id; p.reviewed_at = ts(); save();
         return go('admin.html', 'success', a === 'approve' ? 'Post approved.' : 'Post rejected.');

@@ -272,6 +272,9 @@ strong { font-weight: 700; }
 .button-small { min-height: 38px; padding: 7px 14px; border-radius: 10px; font-size: 13px; }
 .button-full { width: 100%; }
 .button:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
+.button:disabled:hover, .button:disabled:active { transform: none; box-shadow: none; }
+.button-primary:disabled:hover { background: var(--maroon); }
+.button:disabled .icon-arrow, .button:disabled:hover .icon-arrow { transform: none; }
 .button.is-loading { pointer-events: none; opacity: .88; }
 .button.is-loading::after { content: ""; width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

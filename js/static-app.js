@@ -169,14 +169,20 @@
       db.messages.push({ id: nextId(db.messages), post_id: Number(m[1]), sender_id: U.id, recipient_id: Number(m[2]), body: body, created_at: ts() }); save(); return go(back, 'success', 'Message sent.');
     }
     if (act === '/profile') {
-      var me = by(db.users, U.id), pv = { id: me.id, full_name: g('full_name'), email: g('email').toLowerCase(), role: me.role }, np = (d.get('new_password') || '').toString(), pe = null, dom = '@' + RD[me.role];
+      var me = by(db.users, U.id), pv = { id: me.id, full_name: g('full_name'), email: g('email').toLowerCase(), role: me.role }, np = (d.get('new_password') || '').toString(), cp = (d.get('current_password') || '').toString(), cnp = (d.get('confirm_password') || '').toString(), pe = null, dom = '@' + RD[me.role];
       if (!pv.full_name || !pv.email) pe = 'Name and email are required.';
       else if (pv.email.slice(-dom.length) !== dom) pe = 'Please use an email ending in ' + dom + '.';
-      else if (np && np.length < 8) pe = 'A new password must be at least 8 characters.';
       else if (db.users.some(function (x) { return x.email === pv.email && x.id !== me.id; })) pe = 'That email is already in use.';
+      else if (np && np.length < 8) pe = 'A new password must be at least 8 characters.';
+      else if (np && !cp) pe = 'Enter your current password to set a new one.';
+      else if (np && np !== cnp) pe = 'The new password and its confirmation do not match.';
       if (pe) return show('profile', { title: 'Your profile', user: pv, error: pe, success: null });
       var fin = function (h) { me.full_name = pv.full_name; me.email = pv.email; if (h) me.password = h; save(); sess(me); go('profile.html', 'success', 'Profile updated.'); };
-      return np ? hash(me.id, np).then(fin) : fin();
+      if (!np) return fin();
+      return hash(me.id, cp).then(function (ch) {
+        if (ch !== me.password) return show('profile', { title: 'Your profile', user: pv, error: 'Your current password is incorrect.', success: null });
+        return hash(me.id, np).then(fin);
+      });
     }
   }
   try { route(); } catch (e) { document.body.innerHTML = '<div style="font-family:sans-serif;max-width:480px;margin:4rem auto;padding:0 1rem"><h1>Something went wrong</h1><p>Please <a href="index.html">go to the home page</a> or <a href="index.html?reset=1">reset the demo data</a>.</p></div>'; }

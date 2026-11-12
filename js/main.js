@@ -334,6 +334,22 @@
     var search = el.closest && el.closest('.search-field');
     if (search) search.classList.toggle('has-value', el.value !== '');
   });
+  // Profile page: keep "Save changes" disabled until something is edited
+  function updateSaveState(form) {
+    var btn = form.querySelector('[data-save-btn]');
+    if (!btn) return;
+    var changed = form.elements.full_name.value.trim() !== form.dataset.origName ||
+                  form.elements.email.value.trim().toLowerCase() !== (form.dataset.origEmail || '').toLowerCase() ||
+                  form.elements.new_password.value !== '' ||
+                  form.elements.current_password.value !== '' ||
+                  form.elements.confirm_password.value !== '';
+    btn.disabled = !changed;
+  }
+  document.addEventListener('input', function (event) {
+    var form = event.target.closest && event.target.closest('form[data-track-changes]');
+    if (form) updateSaveState(form);
+  });
+
   document.addEventListener('invalid', function (event) {
     var field = event.target.closest && event.target.closest('.field');
     if (field) { field.classList.add('is-touched'); validateField(event.target, true); }

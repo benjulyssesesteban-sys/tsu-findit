@@ -137,6 +137,7 @@
       var rv = { type: g('type') || 'lost', item_name: g('item_name'), description: g('description'), location_text: g('location_text'), event_date: g('event_date'), event_time: g('event_time') };
       var bad = function (t) { show('report-form', { title: 'Report an item', error: t, values: rv }); };
       if (!rv.item_name || !rv.description || !rv.location_text || !rv.event_date) return bad('Please complete the item name, description, location, and date.');
+      if (rv.event_date > new Date().toLocaleDateString('en-CA')) return bad('The date cannot be in the future. Please choose today or an earlier date.');
       return photo(d.get('photo')).then(function (img) {
         db.posts.push({ id: nextId(db.posts), user_id: U.id, type: rv.type === 'found' ? 'found' : 'lost', item_name: rv.item_name, description: rv.description, image_path: img, location_text: rv.location_text, event_date: rv.event_date, event_time: rv.event_time || null, status: 'PENDING', rejection_reason: null, reviewed_by: null, reviewed_at: null, created_at: ts() });
         if (!save()) { db.posts.pop(); return bad('Browser storage is full. Try a smaller photo or none.'); }

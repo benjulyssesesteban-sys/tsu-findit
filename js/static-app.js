@@ -44,7 +44,8 @@
   function show(view, l) {
     var loc = Object.assign({ user: U, currentPath: PATHS[window.PAGE] || '', config: { TSU_EMAIL_DOMAIN: DOM }, success: null, error: null, description: DESC[window.PAGE] }, l);
     var html = ejs.render(T[view], loc, { includer: function (o) { return { template: T[o] || T['partials/' + o] }; } })
-      .replace(/(href|src)="(\/[^"]*)"/g, function (a, at, u) { return at + '="' + href(u) + '"'; });
+      .replace(/(href|src)="(\/[^"]*)"/g, function (a, at, u) { return at + '="' + href(u) + '"'; })
+      .replace(/<form([^>]*?)data-act="\/browse"/g, function (a, pre) { return '<form' + pre + 'data-act="/browse" action="browse.html"'; });
     var ld = document.getElementById('ld'); if (ld && ld.parentNode) ld.parentNode.removeChild(ld);
     document.open(); document.write(html); document.close();
     document.addEventListener('submit', onSubmit);

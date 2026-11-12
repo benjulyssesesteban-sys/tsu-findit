@@ -345,10 +345,21 @@
                   form.elements.confirm_password.value !== '';
     btn.disabled = !changed;
   }
-  document.addEventListener('input', function (event) {
-    var form = event.target.closest && event.target.closest('form[data-track-changes]');
-    if (form) updateSaveState(form);
+  ['input', 'change', 'keyup'].forEach(function (type) {
+    document.addEventListener(type, function (event) {
+      var form = event.target.closest && event.target.closest('form[data-track-changes]');
+      if (form) updateSaveState(form);
+    });
   });
+  document.querySelectorAll('form[data-track-changes]').forEach(updateSaveState);
+  // Hard block: if nothing changed, the profile form cannot be submitted at all (click, Enter, anything)
+  document.addEventListener('submit', function (event) {
+    var form = event.target;
+    if (!form.matches || !form.matches('form[data-track-changes]')) return;
+    var btn = form.querySelector('[data-save-btn]');
+    updateSaveState(form);
+    if (btn && btn.disabled) { event.preventDefault(); event.stopPropagation(); }
+  }, true);
 
   document.addEventListener('invalid', function (event) {
     var field = event.target.closest && event.target.closest('.field');

@@ -272,6 +272,8 @@ strong { font-weight: 700; }
 .button-small { min-height: 38px; padding: 7px 14px; border-radius: 10px; font-size: 13px; }
 .button-full { width: 100%; }
 .button:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
+.button:disabled { pointer-events: none; }
+.form-actions:has(> .button:disabled) { cursor: not-allowed; }
 .button:disabled:hover, .button:disabled:active { transform: none; box-shadow: none; }
 .button-primary:disabled:hover { background: var(--maroon); }
 .button:disabled .icon-arrow, .button:disabled:hover .icon-arrow { transform: none; }

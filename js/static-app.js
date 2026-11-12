@@ -35,7 +35,7 @@
     var m;
     if ((m = u.match(/^\/items\/(\d+)$/))) return 'item.html?id=' + m[1];
     if ((m = u.match(/^\/messages\/(\d+)\/(\d+)$/))) return 'conversation.html?p=' + m[1] + '&u=' + m[2];
-    if (/^\/(css|images|js)\//.test(u)) return u.slice(1) + (/^\/(css|js)\//.test(u) ? '?v=6' : '');
+    if (/^\/(css|images|js)\//.test(u)) return u.slice(1) + (/^\/(css|js)\//.test(u) ? '?v=7' : '');
     return u.slice(1).replace(/^([^?]+)/, '$1.html');
   }
   function go(page, type, text) { var u = page + (type ? (page.indexOf('?') > -1 ? '&' : '?') + type + '=' + encodeURIComponent(text) : ''); (window.Cloud ? window.Cloud.flush() : Promise.resolve()).then(function () { location.href = u; }); }

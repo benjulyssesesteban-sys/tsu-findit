@@ -341,7 +341,6 @@
     var changed = form.elements.full_name.value.trim() !== form.dataset.origName ||
                   form.elements.email.value.trim().toLowerCase() !== (form.dataset.origEmail || '').toLowerCase() ||
                   form.elements.new_password.value !== '' ||
-                  form.elements.current_password.value !== '' ||
                   form.elements.confirm_password.value !== '';
     btn.disabled = !changed;
   }

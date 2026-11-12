@@ -170,6 +170,8 @@
     }
     if (act === '/profile') {
       var me = by(db.users, U.id), pv = { id: me.id, full_name: g('full_name'), email: g('email').toLowerCase(), role: me.role }, np = (d.get('new_password') || '').toString(), cp = (d.get('current_password') || '').toString(), cnp = (d.get('confirm_password') || '').toString(), pe = null, dom = '@' + RD[me.role];
+      /* Guard: Save is disabled until something changes, so never save (or show "Profile updated.") when nothing did. */
+      if ((e.submitter && e.submitter.disabled) || (!np && !cp && !cnp && pv.full_name === me.full_name && pv.email === me.email)) return;
       if (!pv.full_name || !pv.email) pe = 'Name and email are required.';
       else if (pv.email.slice(-dom.length) !== dom) pe = 'Please use an email ending in ' + dom + '.';
       else if (db.users.some(function (x) { return x.email === pv.email && x.id !== me.id; })) pe = 'That email is already in use.';

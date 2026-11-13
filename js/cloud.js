@@ -31,7 +31,7 @@
         if (!seen[id]) { batch.delete(fs.collection(c).doc(String(id))); delete last[c][id]; n++; }
       });
     });
-    if (n) pending = pending.then(function () { return batch.commit(); }).catch(function (e) { console.error('Cloud save failed', e); });
+    if (n) pending = pending.then(function () { return batch.commit(); }).catch(function (e) { console.error('Cloud save failed', e); window.__saveFailed = true; });
   }
 
   // Wait for in-flight writes (so navigating away does not cancel them).

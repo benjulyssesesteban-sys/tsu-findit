@@ -7,7 +7,7 @@
   var LS = (function () { try { var x = '__t'; window.localStorage.setItem(x, x); window.localStorage.removeItem(x); return window.localStorage; } catch (e) { var m = {}; return { getItem: function (k) { return k in m ? m[k] : null; }, setItem: function (k, v) { m[k] = String(v); }, removeItem: function (k) { delete m[k]; } }; } })();
   if (/[?&]reset=1/.test(location.search)) { LS.removeItem(SK); location.replace(location.pathname + '?success=' + encodeURIComponent('Local session cleared.')); return; }
   function hash(id, pw) { return crypto.subtle.digest('SHA-256', new TextEncoder().encode('fi1:' + id + ':' + pw)).then(function (b) { return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }); }
-  var ts = function () { return new Date().toISOString().slice(0, 19).replace('T', ' '); };
+  var ts = function () { var d = new Date(), z = function (n) { return String(n).padStart(2, '0'); }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds()); };
   function seed() {
     var t = ts(), u = function (i, n, e, r, w) { return { id: i, full_name: n, email: e, password: w, role: r, created_at: t }; };
     var p = function (i, uid, ty, n, d, l, dt, tm, st, rv) { return { id: i, user_id: uid, type: ty, item_name: n, description: d, image_path: null, location_text: l, event_date: dt, event_time: tm, status: st, rejection_reason: null, reviewed_by: rv, reviewed_at: rv ? t : null, created_at: t }; };
@@ -19,7 +19,8 @@
   var db = remote; if (!db && !window.Cloud) { try { db = JSON.parse(LS.getItem(K)); } catch (e) {} } if (!db) { db = seed(); save(); }
   function save() { if (window.Cloud) { window.Cloud.push(db); return true; } try { LS.setItem(K, JSON.stringify(db)); return true; } catch (e) { return false; } }
   var U = null; try { U = JSON.parse(LS.getItem(SK)); } catch (e) {}
-  if (U && !db.users.some(function (x) { return x.id === U.id && x.email === U.email; })) { U = null; LS.removeItem(SK); }
+  var cur = U && db.users.filter(function (x) { return x.id === U.id && x.email === U.email; })[0];
+  if (!cur) { U = null; LS.removeItem(SK); } else { U = { id: cur.id, full_name: cur.full_name, email: cur.email, role: cur.role }; }
   var Q = {}; new URLSearchParams(location.search).forEach(function (v, k) { Q[k] = v; });
   var by = function (a, id) { return a.filter(function (x) { return x.id === Number(id); })[0]; };
   var nextId = function (a) { return window.Cloud ? Date.now() * 1000 + Math.floor(Math.random() * 1000) : a.reduce(function (m, x) { return Math.max(m, x.id); }, 0) + 1; };
@@ -38,7 +39,7 @@
     if (/^\/(css|images|js)\//.test(u)) return u.slice(1) + (/^\/(css|js)\//.test(u) ? '?v=8' : '');
     return u.slice(1).replace(/^([^?]+)/, '$1.html');
   }
-  function go(page, type, text) { var u = page + (type ? (page.indexOf('?') > -1 ? '&' : '?') + type + '=' + encodeURIComponent(text) : ''); (window.Cloud ? window.Cloud.flush() : Promise.resolve()).then(function () { location.href = u; }); }
+  function go(page, type, text) { var u = page + (type ? (page.indexOf('?') > -1 ? '&' : '?') + type + '=' + encodeURIComponent(text) : ''); (window.Cloud ? window.Cloud.flush() : Promise.resolve()).then(function () { if (window.__saveFailed) { window.__saveFailed = false; u = page.split('?')[0] + '?error=' + encodeURIComponent('Could not save to the shared database. Check your internet connection and try again.'); } location.href = u; }); }
   var DESC = {index: "TSU FindIt is a moderated lost and found board for Tarlac State University. Search lost items, report found ones, and message the poster.", browse: "Browse approved lost and found items at Tarlac State University. Search by keyword and filter by lost, found, or claimed items.", item: "View the details of a lost or found item on TSU FindIt, including where and when it was reported, and message the person who posted it.", login: "Log in to TSU FindIt with your TSU email to report items, check your posts, and send messages.", register: "Create a TSU FindIt account with your student, faculty, or staff TSU email to report and search lost and found items.", profile: "Update your TSU FindIt display name, TSU email, and password.", report: "Report a lost or found item on TSU FindIt with its details, location, date, and an optional photo. Every post is reviewed before it goes live.", "my-posts": "See your lost and found reports on TSU FindIt and check whether each one is pending, active, claimed, or not approved.", messages: "Read your TSU FindIt conversations with other users about lost and found items.", conversation: "Private conversation on TSU FindIt between two users about a lost or found item.", admin: "Admin review queue for TSU FindIt: approve or reject pending lost and found reports.", "404": "This page was not found on TSU FindIt. Go back to the home page or browse the lost and found items."};
   function clip(x) { x = String(x); return x.length > 158 ? x.slice(0, 155).replace(/\s+\S*$/, '') + '...' : x; }
   function show(view, l) {
@@ -132,6 +133,7 @@
       else if (pw2.length < 8) er = 'Password must be at least 8 characters.';
       else if (db.users.some(function (x) { return x.email === v.email; })) er = 'An account with that email already exists.';
       if (er) return show('register', { title: 'Create an account', error: er, values: v });
+      if (f.dataset.busy) return; f.dataset.busy = '1';
       var nid = nextId(db.users);
       return hash(nid, pw2).then(function (h) { var nu = { id: nid, full_name: v.full_name, email: v.email, password: h, role: v.role, created_at: ts() }; db.users.push(nu); save(); sess(nu); go('index.html', 'success', 'Welcome to TSU FindIt, your account is ready.'); });
     }
@@ -141,6 +143,7 @@
       var bad = function (t) { show('report-form', { title: 'Report an item', error: t, values: rv }); };
       if (!rv.item_name || !rv.description || !rv.location_text || !rv.event_date) return bad('Please complete the item name, description, location, and date.');
       if (rv.event_date > (function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})(new Date())) return bad('The date cannot be in the future. Please choose today or an earlier date.');
+      if (f.dataset.busy) return; f.dataset.busy = '1';
       return photo(d.get('photo')).then(function (img) {
         db.posts.push({ id: nextId(db.posts), user_id: U.id, type: rv.type === 'found' ? 'found' : 'lost', item_name: rv.item_name, description: rv.description, image_path: img, location_text: rv.location_text, event_date: rv.event_date, event_time: rv.event_time || null, status: 'PENDING', rejection_reason: null, reviewed_by: null, reviewed_at: null, created_at: ts() });
         if (!save()) { db.posts.pop(); return bad('Browser storage is full. Try a smaller photo or none.'); }
@@ -166,6 +169,7 @@
     if ((m = act.match(/^\/messages\/(\d+)\/(\d+)$/))) {
       var back = 'conversation.html?p=' + m[1] + '&u=' + m[2], body = g('body');
       if (!body) return go(back, 'error', 'Write a message before sending.');
+      if (f.dataset.busy) return; f.dataset.busy = '1';
       db.messages.push({ id: nextId(db.messages), post_id: Number(m[1]), sender_id: U.id, recipient_id: Number(m[2]), body: body, created_at: ts() }); save(); return go(back, 'success', 'Message sent.');
     }
     if (act === '/profile') {

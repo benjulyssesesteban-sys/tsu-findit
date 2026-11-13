@@ -639,6 +639,11 @@ body:has(.inline-alert.error) .toast-error { display: none; }
   box-shadow: 16px 18px 0 var(--gold-400), 0 30px 60px rgba(0, 0, 0, .35); transform: rotate(-6deg); animation: float-rot 6s ease-in-out infinite;
 }
 @keyframes float-rot { 0%, 100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(-6deg) translateY(-10px); } }
+.found-card-link { display: block; color: inherit; text-decoration: none; cursor: pointer; }
+.found-card-link:focus-visible { outline: 3px solid var(--gold); outline-offset: 8px; }
+.item-illustration.has-photo { overflow: hidden; background: var(--line); }
+.item-illustration.has-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.found-card-link .found-card-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
 .found-card-top, .found-card-footer { display: flex; justify-content: space-between; align-items: center; }
 .mini-label { color: var(--maroon); font-size: 11px; font-weight: 700; letter-spacing: .16em; }
 .card-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--gold); }

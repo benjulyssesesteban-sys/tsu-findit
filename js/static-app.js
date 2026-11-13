@@ -36,7 +36,7 @@
     var m;
     if ((m = u.match(/^\/items\/(\d+)$/))) return 'item.html?id=' + m[1];
     if ((m = u.match(/^\/messages\/(\d+)\/(\d+)$/))) return 'conversation.html?p=' + m[1] + '&u=' + m[2];
-    if (/^\/(css|images|js)\//.test(u)) return u.slice(1) + (/^\/(css|js)\//.test(u) ? '?v=8' : '');
+    if (/^\/(css|images|js)\//.test(u)) return u.slice(1) + (/^\/(css|js)\//.test(u) ? '?v=9' : '');
     return u.slice(1).replace(/^([^?]+)/, '$1.html');
   }
   function go(page, type, text) { var u = page + (type ? (page.indexOf('?') > -1 ? '&' : '?') + type + '=' + encodeURIComponent(text) : ''); (window.Cloud ? window.Cloud.flush() : Promise.resolve()).then(function () { if (window.__saveFailed) { window.__saveFailed = false; u = page.split('?')[0] + '?error=' + encodeURIComponent('Could not save to the shared database. Check your internet connection and try again.'); } location.href = u; }); }
@@ -60,7 +60,7 @@
 
   function route() {
     var pg = window.PAGE, ps = db.posts, posts, p;
-    if (pg === 'index') { posts = newest(ps.filter(function (x) { return (x.status === 'ACTIVE' || x.status === 'CLAIMED') && !future(x); })).slice(0, 6).map(join); return show('landing', Object.assign({ title: 'Find what matters', posts: posts }, msg())); }
+    if (pg === 'index') { posts = newest(ps.filter(function (x) { return (x.status === 'ACTIVE' || x.status === 'CLAIMED') && !future(x); })).slice(0, 6).map(join); var hero = newest(ps.filter(function (x) { return x.status === 'ACTIVE' && !future(x) && x.image_path; }))[0]; return show('landing', Object.assign({ title: 'Find what matters', posts: posts, heroPost: hero ? join(hero) : null }, msg())); }
     if (pg === 'browse') {
       var claimed = Q.status === 'claimed' || Q.status === 'all', q = (Q.q || '').trim().toLowerCase();
       posts = newest(ps.filter(function (x) {

@@ -907,7 +907,6 @@ body:has(.inline-alert.error) .toast-error { display: none; }
 .js .reveal.is-visible { opacity: 1; translate: 0 0; }
 
 /* Page transitions: native cross-document transitions where supported, fade fallback elsewhere */
-@view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s; animation-timing-function: var(--ease); }
 .no-vt body { animation: page-in .45s ease both; }
 .is-leaving body { opacity: 0; transition: opacity .18s ease; }

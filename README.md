@@ -9,11 +9,12 @@ TSU FindIt is a lost and found website for the TSU community. Students, faculty,
 ## Features
 
 - Browse and search approved posts by keyword, and filter by lost, found, or claimed items
-- Report a lost or found item with an optional photo (JPG, PNG, or WEBP, under 5 MB)
+- Report a lost or found item with an optional photo (JPG, PNG, or WEBP, under 5 MB). The date cannot be in the future, and a photo preview with a Remove button is shown
 - Register and log in with a TSU email that matches the chosen role
-- My posts page with post status, reasons for rejected posts, and a Mark as claimed button
-- Messages between users about a specific item
-- Admin review queue to approve or reject posts, with a written reason for rejections
+- My posts page with post status, reasons for rejected posts, a Mark as claimed button, and a Delete button for rejected posts (both ask for confirmation)
+- Profile page where a new password needs the current password, a matching confirmation, and at least 8 characters
+- Messages between users about a specific approved item (not on pending or rejected posts, and not on your own post)
+- Admin review queue to approve or reject posts, with a written reason for rejections. A post with a future date cannot be approved. Administrator accounts cannot be created from the registration form
 - Responsive layout for desktop, tablet, and mobile
 
 ## How it works
@@ -23,7 +24,7 @@ The website is a static site hosted on GitHub Pages. There is no server of its o
 - Each page is a small HTML file. The page content is built in the browser from EJS templates (`js/templates.js`) by `js/static-app.js`.
 - Data (users, posts, messages, and photos) is stored in Firebase Firestore through `js/cloud.js`, so every account on every device sees the same data.
 - Photos are resized in the browser (up to 640 pixels, JPEG) and saved inside the post record.
-- Passwords are hashed with SHA-256 in the browser (Web Crypto) before they are saved. Plain-text passwords are never stored.
+- Passwords are hashed with SHA-256 in the browser (Web Crypto) before they are saved. The hash input is a fixed prefix (`fi1:`), the user id, and the password. Plain-text passwords are never stored.
 - If `js/firebase-config.js` is not filled in, the site falls back to per-browser localStorage, which is only useful for local testing.
 
 ## Project structure
@@ -60,7 +61,7 @@ New accounts must use the email domain of their role: `@student.tsu.edu.ph`, `@p
 
 ## Deploy on GitHub Pages
 
-1. Create a public repository (for example `tsu-findit`) and upload everything in this folder to the repository root, including `.nojekyll`.
+1. Create a public repository (for example `tsu-findit`) and upload everything in this folder to the repository root, including `.nojekyll` (the group used GitHub Desktop to commit and push the files).
 2. Go to Settings > Pages. Set Source to "Deploy from a branch", Branch to `main`, and folder to `/ (root)`. Save.
 3. After one or two minutes the site is live at `https://<username>.github.io/tsu-findit/`.
 4. Test the live link: browse and search, log in, report an item with a photo, approve it as admin, send a message, and check the mobile view.
@@ -69,7 +70,7 @@ New accounts must use the email domain of their role: `@student.tsu.edu.ph`, `@p
 
 The full step-by-step guide is in `docs/SETUP_GUIDE.md` (also `docs/SETUP_GUIDE.docx`).
 
-1. In the Firebase console, create a project on the Spark plan and add a Firestore database.
+1. In the Firebase console, create a project on the Spark plan and add a Firestore database (this project is named `tsu-findit`, project ID `tsu-findit-360bc`).
 2. Register a web app in Project settings and copy the `firebaseConfig` values into `js/firebase-config.js`.
 3. In Firestore > Rules, paste the rules below and publish.
 4. Push the changes to GitHub Pages.
@@ -93,9 +94,9 @@ Opening any page with `?reset=1` only clears your own login on that browser. It 
 
 ## Testing
 
-- Lighthouse on the home page (mobile / desktop): Performance 84 / 97, Accessibility 95 / 95, Best Practices 100 / 100, SEO 100 / 100
+- Lighthouse on the live home page (mobile / desktop): Performance 74 / 94, Accessibility 95 / 100, Best Practices 100 / 100, SEO 100 / 100. The mobile performance score is lower because the page is built in the browser after the Firebase SDK and Firestore data load; scores can change between runs
 - Manual checks on the live link: search and filter, form validation, admin review, claiming an item, and messaging between two accounts on two devices
 
 ## Credits
 
-HTML, CSS, and JavaScript were written by the group. The logo was designed by the group and the campus photo was taken by the group. Third-party resources: EJS, the Firebase JavaScript SDK, Firebase Firestore, GitHub Pages, Google Fonts (DM Sans and Fraunces), and the Lucide icon set (https://lucide.dev).
+HTML, CSS, and JavaScript were written by the group. The logo was designed by the group and the campus cover photo was found through Google Search (source link: https://share.google/dX4z8WLFlMgJcJwib) and is used for academic, non-commercial purposes only. Third-party resources: EJS, the Firebase JavaScript SDK, Firebase Firestore, GitHub Pages, Google Fonts (DM Sans and Fraunces), and the Lucide icon set (https://lucide.dev).
